@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listUsers, setUserRole, setUserStatus } from '../api/adminUsers.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import toast from 'react-hot-toast'
 
 const ROLES = ['super_admin', 'recruiter', 'candidate', 'employer', 'vendor']
 const STATUSES = ['active', 'pending', 'suspended', 'deactivated']
@@ -15,10 +16,15 @@ export default function AdminUsers() {
 
   const load = () => {
     setLoading(true)
+    setError('')          // clear old error on reload
     const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ''))
     listUsers(params)
       .then((r) => setUsers(r.data.data || []))
-      .catch((e) => setError(e?.response?.data?.error || 'Failed to load'))
+      .catch((e) => {
+        const msg = e?.response?.data?.error || 'Failed to load users'
+        setError(msg)
+        toast.error(msg)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -29,22 +35,41 @@ export default function AdminUsers() {
   const changeRole = async (id, role) => {
     if (!confirm(`Change role to "${role}"?`)) return
     setBusyId(id)
-    try { await setUserRole(id, role); load() }
-    catch (e) { alert(e?.response?.data?.error || 'Failed') }
-    finally { setBusyId(null) }
+    try {
+      await setUserRole(id, role)
+      toast.success('Role updated')
+      load()
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Failed to change role')
+    } finally {
+      setBusyId(null)
+    }
   }
 
   const changeStatus = async (id, status) => {
     if (!confirm(`Set status to "${status}"?`)) return
     setBusyId(id)
-    try { await setUserStatus(id, status); load() }
-    catch (e) { alert(e?.response?.data?.error || 'Failed') }
-    finally { setBusyId(null) }
+    try {
+      await setUserStatus(id, status)
+      toast.success('Status updated')
+      load()
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Failed to change status')
+    } finally {
+      setBusyId(null)
+    }
   }
 
   const isSuperAdmin = user?.roles?.includes('super_admin')
   if (!isSuperAdmin) {
-    return <div className="page"><div className="card"><h2>Access denied</h2><p>Only super admins can manage users.</p></div></div>
+    return (
+      <div className="page">
+        <div className="card">
+          <h2>Access denied</h2>
+          <p>Only super admins can manage users.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -52,22 +77,32 @@ export default function AdminUsers() {
       <h1>Users</h1>
 
       <div className="filters">
-        <input type="text" placeholder="Search by email or name…" value={filters.q}
-          onChange={(e) => update('q', e.target.value)} />
+        <input
+          type="text"
+          placeholder="Search by email or name…"
+          value={filters.q}
+          onChange={(e) => update('q', e.target.value)}
+        />
         <select value={filters.role} onChange={(e) => update('role', e.target.value)}>
           <option value="">All roles</option>
-          {ROLES.map((r) => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+          {ROLES.map((r) => (
+            <option key={r} value={r}>{r.replace('_', ' ')}</option>
+          ))}
         </select>
         <select value={filters.status} onChange={(e) => update('status', e.target.value)}>
           <option value="">All statuses</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
         </select>
       </div>
 
       {error && <p className="error">{error}</p>}
       {loading && <p>Loading…</p>}
 
-      {!loading && users.length === 0 && <div className="card"><p>No users found.</p></div>}
+      {!loading && users.length === 0 && (
+        <div className="card"><p>No users found.</p></div>
+      )}
 
       {users.length > 0 && (
         <div className="card">
@@ -84,24 +119,50 @@ export default function AdminUsers() {
               {users.map((u) => {
                 const currentRole = (u.roles && u.roles[0]) || ''
                 return (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #f3f4f6', opacity: busyId === u.id ? 0.5 : 1 }}>
+                  <tr
+                    key={u.id}
+                    style={{
+                      borderBottom: '1px solid #f3f4f6',
+                      opacity: busyId === u.id ? 0.5 : 1,
+                    }}
+                  >
                     <td style={{ padding: 10 }}>
                       <strong>{u.first_name} {u.last_name}</strong>
                       <div className="muted" style={{ fontSize: 13 }}>{u.email}</div>
                     </td>
                     <td style={{ padding: 10 }}>
-                      <span className={`status-pill status-${u.account_status}`}>{u.account_status}</span>
+                      <span className={`status-pill status-${u.account_status}`}>
+                        {u.account_status}
+                      </span>
                     </td>
                     <td style={{ padding: 10 }}>
-                      <select value={currentRole} onChange={(e) => changeRole(u.id, e.target.value)} disabled={busyId === u.id}>
-                        {ROLES.map((r) => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                      <select
+                        value={currentRole}
+                        onChange={(e) => changeRole(u.id, e.target.value)}
+                        disabled={busyId === u.id}
+                      >
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>{r.replace('_', ' ')}</option>
+                        ))}
                       </select>
                     </td>
                     <td style={{ padding: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {u.account_status === 'active' ? (
-                        <button className="btn btn-danger" onClick={() => changeStatus(u.id, 'suspended')} disabled={busyId === u.id}>Suspend</button>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => changeStatus(u.id, 'suspended')}
+                          disabled={busyId === u.id}
+                        >
+                          Suspend
+                        </button>
                       ) : (
-                        <button className="btn btn-primary" onClick={() => changeStatus(u.id, 'active')} disabled={busyId === u.id}>Activate</button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => changeStatus(u.id, 'active')}
+                          disabled={busyId === u.id}
+                        >
+                          Activate
+                        </button>
                       )}
                     </td>
                   </tr>

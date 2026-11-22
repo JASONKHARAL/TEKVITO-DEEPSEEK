@@ -9,3 +9,4 @@ export const updateJobStatus = (id, status, notes = null) =>
   api.patch(`/jobs/${id}/status`, { status, notes })
 export const getJobVersions = (id) => api.get(`/jobs/${id}/versions`)
 export const getJobVersionDetail = (id, vnum) => api.get(`/jobs/${id}/versions/${vnum}`)
+export const deleteJob = (id) => api.delete(`/jobs/${id}`)

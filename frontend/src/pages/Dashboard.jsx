@@ -16,7 +16,50 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="page"><p>Loading dashboard…</p></div>
+  // ---------- SKELETON LOADER ----------
+  if (loading) {
+    const isAdmin = user?.roles?.some((r) => ['super_admin', 'recruiter'].includes(r))
+    const cardCount = isAdmin ? 4 : 3
+
+    return (
+      <div className="page">
+        {/* Header Skeleton */}
+        <div className="skeleton skeleton-title" style={{ width: 200, height: 36, marginBottom: 10 }}></div>
+        <div className="skeleton skeleton-text short" style={{ width: 150, marginBottom: 32 }}></div>
+
+        {/* Stat Cards Skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          {Array.from({ length: cardCount }).map((_, i) => (
+            <div key={i} className="skeleton-card" style={{ height: '110px' }}>
+              <div className="skeleton skeleton-text short" style={{ width: '60%' }}></div>
+              <div className="skeleton skeleton-title" style={{ marginTop: 'auto', height: '32px', width: '40%' }}></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Content Grid Skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px' }}>
+          <div className="skeleton-card" style={{ height: '300px' }}>
+            <div className="skeleton skeleton-title" style={{ width: '40%', marginBottom: '20px' }}></div>
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="skeleton skeleton-text" style={{ marginBottom: '12px' }}></div>
+            ))}
+          </div>
+          
+          {isAdmin && (
+            <div className="skeleton-card" style={{ height: '300px' }}>
+              <div className="skeleton skeleton-title" style={{ width: '50%', marginBottom: '20px' }}></div>
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="skeleton skeleton-text" style={{ marginBottom: '12px' }}></div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+  // -----------------------------------
+
   if (error) return <div className="page"><p className="error">{error}</p></div>
   if (!data) return null
 

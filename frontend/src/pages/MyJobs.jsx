@@ -34,7 +34,7 @@ export default function MyJobs() {
 
   return (
     <div className="page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <h1>My Jobs</h1>
         <Link to="/jobs/new" className="btn btn-primary">+ Post New Job</Link>
       </div>
@@ -59,12 +59,16 @@ export default function MyJobs() {
             <tbody>
               {jobs.map((j) => (
                 <tr key={j.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: 10 }}><Link to={`/jobs/${j.id}`}>{j.title}</Link></td>
-                  <td style={{ padding: 10, color: '#6b7280' }}>{j.category_name || '—'}</td>
-                  <td style={{ padding: 10 }}>
+                  <td data-label="Title" style={{ padding: 10 }}>
+                    <Link to={`/jobs/${j.id}`}>{j.title}</Link>
+                  </td>
+                  <td data-label="Category" style={{ padding: 10, color: '#6b7280' }}>
+                    {j.category_name || '—'}
+                  </td>
+                  <td data-label="Status" style={{ padding: 10 }}>
                     <span className={`status-pill status-${j.status}`}>{j.status.replace('_', ' ')}</span>
                   </td>
-                  <td style={{ padding: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <td data-label="Actions" style={{ padding: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <Link to={`/my-jobs/${j.id}/edit`} className="btn btn-secondary">Edit</Link>
                     <Link to={`/my-jobs/${j.id}/versions`} className="btn btn-secondary">History</Link>
                     {j.status === 'published' ? (

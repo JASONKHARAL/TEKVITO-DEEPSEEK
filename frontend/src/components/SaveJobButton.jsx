@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { saveJob, unsaveJob, isJobSaved } from '../api/savedJobs.js'
+import toast from 'react-hot-toast'
 
 export default function SaveJobButton({ jobId }) {
   const { user } = useAuth()
@@ -23,12 +24,14 @@ export default function SaveJobButton({ jobId }) {
       if (saved) {
         await unsaveJob(jobId)
         setSaved(false)
+        toast.success('Job removed from saved')
       } else {
         await saveJob(jobId)
         setSaved(true)
+        toast.success('Job saved!')
       }
     } catch (e) {
-      alert(e?.response?.data?.error || 'Failed')
+      toast.error(e?.response?.data?.error || 'Failed to save job')
     } finally {
       setBusy(false)
     }

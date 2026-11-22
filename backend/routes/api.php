@@ -85,4 +85,16 @@ return [
     ['POST',   '/jobs/{id}/save',        fn($id) => SavedJobController::save((int) $id)],
     ['DELETE', '/jobs/{id}/save',        fn($id) => SavedJobController::unsave((int) $id)],
     ['GET',    '/jobs/{id}/is-saved',    fn($id) => SavedJobController::isSaved((int) $id)],
+
+    // ---- Job skills ----
+    ['GET', '/jobs/{id}/skills',  fn($id) => JobController::getSkills((int) $id)],
+    ['PUT', '/jobs/{id}/skills',  fn($id) => JobController::setSkills((int) $id)],
+
+    // ---- Talent requests ----
+    ['POST', '/hire-request',                  fn() => TalentRequestController::submit()],
+    ['GET',  '/admin/talent-requests',         fn() => TalentRequestController::index()],
+    ['GET',  '/admin/talent-requests/{id}',    fn($id) => TalentRequestController::show((int) $id)],
+    ['PATCH','/admin/talent-requests/{id}/status', fn($id) => TalentRequestController::updateStatus((int) $id)],
+    ['POST', '/admin/talent-requests/{id}/link-job', fn($id) => TalentRequestController::linkJob((int) $id)],
+    ['DELETE', '/jobs/{id}',      fn($id) => JobController::destroy((int) $id)],
 ];

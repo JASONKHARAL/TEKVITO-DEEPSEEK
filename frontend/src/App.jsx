@@ -1,5 +1,6 @@
 import Navbar from './components/Navbar.jsx'
 import AppRoutes from './routes/AppRoutes.jsx'
+import { Toaster } from 'react-hot-toast'
 
 export default function App() {
   return (
@@ -8,6 +9,7 @@ export default function App() {
       <main>
         <AppRoutes />
       </main>
+      <Toaster position="top-right" />   {/* ← ADD THIS */}
     </>
   )
 }

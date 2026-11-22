@@ -1,18 +1,31 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { listJobs, getCategories } from '../api/jobs.js'
+import { listAllSkills } from '../api/skills.js'
 import JobCard from '../components/JobCard.jsx'
 
 export default function Jobs() {
+  const [searchParams] = useSearchParams()
   const [jobs, setJobs] = useState([])
   const [categories, setCategories] = useState([])
+  const [skills, setSkills] = useState([])
   const [meta, setMeta] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState({ q: '', category_id: '', country: '', page: 1 })
+  const [filters, setFilters] = useState({
+    q: searchParams.get('q') || '',
+    category_id: searchParams.get('category_id') || '',
+    country: searchParams.get('country') || '',
+    skill_id: searchParams.get('skill_id') || '',
+    page: 1,
+  })
 
   useEffect(() => {
-    getCategories()
-      .then((res) => setCategories(res.data.categories || []))
+    Promise.all([getCategories(), listAllSkills()])
+      .then(([cRes, sRes]) => {
+        setCategories(cRes.data.categories || [])
+        setSkills(sRes.data.skills || [])
+      })
       .catch(() => {})
   }, [])
 
@@ -42,10 +55,22 @@ export default function Jobs() {
           value={filters.q}
           onChange={(e) => update('q', e.target.value)}
         />
-        <select value={filters.category_id} onChange={(e) => update('category_id', e.target.value)}>
+        <select
+          value={filters.category_id}
+          onChange={(e) => update('category_id', e.target.value)}
+        >
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
+          value={filters.skill_id}
+          onChange={(e) => update('skill_id', e.target.value)}
+        >
+          <option value="">Any skill</option>
+          {skills.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
         <input
@@ -56,7 +81,18 @@ export default function Jobs() {
         />
       </div>
 
-      {loading && <p>Loading jobs…</p>}
+            {loading && (
+        <div className="job-grid">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="skeleton-card">
+              <div className="skeleton skeleton-title"></div>
+              <div className="skeleton skeleton-text short"></div>
+              <div className="skeleton skeleton-badge" style={{ marginTop: '10px' }}></div>
+              <div className="skeleton skeleton-text" style={{ marginTop: '10px' }}></div>
+            </div>
+          ))}
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
 
       {!loading && !error && jobs.length === 0 && (

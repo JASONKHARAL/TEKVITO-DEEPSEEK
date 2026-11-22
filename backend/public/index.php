@@ -29,7 +29,8 @@ require __DIR__ . '/../models/Notification.php';
 require __DIR__ . '/../controllers/NotificationController.php';
 require __DIR__ . '/../models/SavedJob.php';
 require __DIR__ . '/../controllers/SavedJobController.php';
-
+require __DIR__ . '/../models/TalentRequest.php';
+require __DIR__ . '/../controllers/TalentRequestController.php';
 
 // ---- CORS ----
 $allowedOrigin = env('CORS_ALLOWED_ORIGIN', 'http://localhost:5173');

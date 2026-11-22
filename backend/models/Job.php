@@ -18,6 +18,11 @@ final class Job
             $where[] = 'j.country = :country';
             $params[':country'] = $filters['country'];
         }
+        if (!empty($filters['skill_id'])) {
+            $where[] = 'EXISTS (SELECT 1 FROM job_skills js WHERE js.job_id = j.id AND js.skill_id = :skill_id)';
+            $params[':skill_id'] = (int) $filters['skill_id'];
+        }
+
         if (!empty($filters['q'])) {
     $where[] = '(j.title LIKE :q_title OR j.description LIKE :q_desc)';
     $params[':q_title'] = '%' . $filters['q'] . '%';

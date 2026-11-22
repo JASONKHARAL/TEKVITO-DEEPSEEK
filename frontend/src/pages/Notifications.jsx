@@ -32,7 +32,19 @@ export default function Notifications() {
         {unread > 0 && <button className="btn btn-secondary" onClick={markAll}>Mark all read ({unread})</button>}
       </div>
 
-      {loading && <p>Loading…</p>}
+            {loading && (
+        <div style={{ marginTop: 16 }}>
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="skeleton-row">
+              <div className="skeleton skeleton-circle"></div>
+              <div className="skeleton-row-content">
+                <div className="skeleton skeleton-text short"></div>
+                <div className="skeleton skeleton-text"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && items.length === 0 && (
         <div className="card"><p>No notifications yet.</p></div>

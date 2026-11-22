@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { getJob, getCategories, updateJob } from '../api/jobs.js'
+import { getJob, getCategories, updateJob, deleteJob } from '../api/jobs.js'
+import JobSkillsPicker from '../components/JobSkillsPicker.jsx'
 
 export default function EditJob() {
   const { id } = useParams()
@@ -17,18 +18,12 @@ export default function EditJob() {
         setCategories(cRes.data.categories || [])
         const j = jRes.data.job
         setForm({
-          title: j.title || '',
-          description: j.description || '',
-          responsibilities: j.responsibilities || '',
-          requirements: j.requirements || '',
-          category_id: j.category_id || '',
-          employment_type: j.employment_type || 'full_time',
-          workplace_type: j.workplace_type || 'onsite',
-          location: j.location || '',
-          country: j.country || '',
-          salary_min: j.salary_min || '',
-          salary_max: j.salary_max || '',
-          salary_currency: j.salary_currency || 'USD',
+          title: j.title || '', description: j.description || '',
+          responsibilities: j.responsibilities || '', requirements: j.requirements || '',
+          category_id: j.category_id || '', employment_type: j.employment_type || 'full_time',
+          workplace_type: j.workplace_type || 'onsite', location: j.location || '',
+          country: j.country || '', salary_min: j.salary_min || '',
+          salary_max: j.salary_max || '', salary_currency: j.salary_currency || 'USD',
         })
       })
       .catch((e) => setError(e?.response?.data?.error || 'Failed to load'))
@@ -55,6 +50,18 @@ export default function EditJob() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this job? This action cannot be undone.")) return;
+    
+    try {
+      await deleteJob(id);
+      alert('Job deleted successfully.');
+      navigate('/my-jobs');
+    } catch (err) {
+      alert(err?.response?.data?.error || 'Failed to delete job');
+    }
+  }
+
   if (loading) return <div className="page"><p>Loading…</p></div>
   if (!form) return <div className="page"><p className="error">{error}</p><Link to="/my-jobs">Back</Link></div>
 
@@ -62,9 +69,7 @@ export default function EditJob() {
     <div className="page">
       <Link to="/my-jobs" className="muted">← Back to my jobs</Link>
       <h1>Edit Job</h1>
-      <p className="muted">
-        <Link to={`/my-jobs/${id}/versions`}>View version history →</Link>
-      </p>
+      <p className="muted"><Link to={`/my-jobs/${id}/versions`}>View version history →</Link></p>
 
       <form className="card" onSubmit={handleSubmit}>
         <label>Title*<input value={form.title} onChange={set('title')} required /></label>
@@ -73,31 +78,21 @@ export default function EditJob() {
         <label>Requirements<textarea rows={3} value={form.requirements} onChange={set('requirements')} /></label>
 
         <div className="form-row">
-          <label>Category
-            <select value={form.category_id} onChange={set('category_id')}>
-              <option value="">Select…</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
-          <label>Employment type
-            <select value={form.employment_type} onChange={set('employment_type')}>
-              <option value="full_time">Full-time</option>
-              <option value="part_time">Part-time</option>
-              <option value="contract">Contract</option>
-              <option value="contract_to_hire">Contract to hire</option>
-              <option value="permanent">Permanent</option>
-            </select>
-          </label>
+          <label>Category<select value={form.category_id} onChange={set('category_id')}>
+            <option value="">Select…</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select></label>
+          <label>Employment type<select value={form.employment_type} onChange={set('employment_type')}>
+            <option value="full_time">Full-time</option><option value="part_time">Part-time</option>
+            <option value="contract">Contract</option><option value="contract_to_hire">Contract to hire</option>
+            <option value="permanent">Permanent</option>
+          </select></label>
         </div>
 
         <div className="form-row">
-          <label>Workplace
-            <select value={form.workplace_type} onChange={set('workplace_type')}>
-              <option value="onsite">Onsite</option>
-              <option value="remote">Remote</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
-          </label>
+          <label>Workplace<select value={form.workplace_type} onChange={set('workplace_type')}>
+            <option value="onsite">Onsite</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option>
+          </select></label>
           <label>Location<input value={form.location} onChange={set('location')} /></label>
           <label>Country<input value={form.country} onChange={set('country')} maxLength={2} /></label>
         </div>
@@ -109,10 +104,26 @@ export default function EditJob() {
         </div>
 
         {error && <div className="error">{error}</div>}
-        <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
+        
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </form>
+
+      <JobSkillsPicker jobId={id} />
+
+      {/* Danger Zone */}
+      <div className="card" style={{ marginTop: 24, border: '1px solid #fecaca', background: '#fef2f2' }}>
+        <h3 style={{ color: '#b91c1c', marginTop: 0 }}>Danger Zone</h3>
+        <p className="muted" style={{ color: '#991b1b', marginBottom: 16 }}>
+          Once you delete a job, there is no going back. All applications associated with this job will also be removed. Please be certain.
+        </p>
+        <button type="button" onClick={handleDelete} className="btn btn-danger">
+          Delete this job
+        </button>
+      </div>
     </div>
   )
 }
