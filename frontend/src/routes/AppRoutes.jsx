@@ -50,7 +50,7 @@ export default function AppRoutes() {
       <Route path="/admin/talent-requests" element={<ProtectedRoute roles={['admin']}><AdminTalentRequests /></ProtectedRoute>} />
       <Route path="/admin/talent-requests/:id" element={<ProtectedRoute roles={['admin']}><AdminTalentRequestDetail /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
     </Routes>
   )
 }

@@ -16,9 +16,12 @@ return [
     }],
 
     // ---- Auth ----
-    ['POST', '/auth/login',    fn() => AuthController::login()],
-    ['POST', '/auth/register', fn() => AuthController::register()],
-    ['GET',  '/auth/me',       fn() => AuthController::me()],
+   // ---- Auth ----
+['POST', '/auth/login',           fn() => AuthController::login()],
+['POST', '/auth/register',        fn() => AuthController::register()],
+['POST', '/auth/forgot-password', fn() => AuthController::forgotPassword()],
+['POST', '/auth/reset-password',  fn() => AuthController::resetPassword()],
+['GET',  '/auth/me',               fn() => AuthController::me()],
 
     // ---- Jobs ----
     ['GET',  '/jobs',            fn() => JobController::index()],

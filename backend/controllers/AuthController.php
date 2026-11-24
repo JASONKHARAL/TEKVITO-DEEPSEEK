@@ -81,6 +81,218 @@ final class AuthController
             ],
         ], 201);
     }
+    
+    public static function forgotPassword(): void
+    {
+        $data = read_json();
+        $email = trim((string) ($data['email'] ?? ''));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            json_out([
+                'ok' => false,
+                'error' => 'Please enter a valid email address.'
+            ], 422);
+        }
+
+        // Always return the same message to avoid revealing registered emails.
+        $response = [
+            'ok' => true,
+            'message' => 'If an account exists for that email, a password reset link has been sent.'
+        ];
+
+        $user = User::findByEmail($email);
+
+        if (!$user || ($user['account_status'] ?? '') !== 'active') {
+            json_out($response);
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        $pdo = db();
+
+        try {
+            $pdo->beginTransaction();
+
+            // Invalidate previous unused reset tokens.
+            $stmt = $pdo->prepare(
+                'UPDATE password_reset_tokens
+                 SET used_at = NOW()
+                 WHERE user_id = ? AND used_at IS NULL'
+            );
+            $stmt->execute([(int) $user['id']]);
+
+            // Store only the SHA-256 hash of the token.
+            $stmt = $pdo->prepare(
+                'INSERT INTO password_reset_tokens
+                 (user_id, token_hash, expires_at, requested_ip)
+                 VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE), ?)'
+            );
+
+            $stmt->execute([
+                (int) $user['id'],
+                $tokenHash,
+                $_SERVER['REMOTE_ADDR'] ?? null
+            ]);
+
+            $pdo->commit();
+
+            $frontendUrl = rtrim(
+                env('FRONTEND_URL', 'http://localhost:5173'),
+                '/'
+            );
+
+            $resetUrl = $frontendUrl . '/reset-password?token=' .
+                rawurlencode($token);
+
+            $safeUrl = htmlspecialchars(
+                $resetUrl,
+                ENT_QUOTES,
+                'UTF-8'
+            );
+
+            $html = '
+                <h2>Tekvito Password Reset</h2>
+                <p>Hello ' .
+                htmlspecialchars($user['first_name'], ENT_QUOTES, 'UTF-8') .
+                ',</p>
+                <p>We received a request to reset your Tekvito password.</p>
+                <p>
+                    <a href="' . $safeUrl . '">
+                        Reset Your Password
+                    </a>
+                </p>
+                <p>This link expires in 30 minutes.</p>
+                <p>If you did not request this, you can ignore this email.</p>
+                <p>Tekvito Support</p>
+            ';
+
+            if (!send_email(
+                $user['email'],
+                'Reset Your Tekvito Password',
+                $html
+            )) {
+                // A failed email must not leave a usable token.
+                $stmt = $pdo->prepare(
+                    'UPDATE password_reset_tokens
+                     SET used_at = NOW()
+                     WHERE token_hash = ? AND used_at IS NULL'
+                );
+                $stmt->execute([$tokenHash]);
+            }
+
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            error_log('Password reset request failed: ' . $e->getMessage());
+        }
+
+        json_out($response);
+    }
+
+    public static function resetPassword(): void
+    {
+        $data = read_json();
+
+        $token = trim((string) ($data['token'] ?? ''));
+        $password = (string) ($data['password'] ?? '');
+
+        if ($token === '' || strlen($token) !== 64) {
+            json_out([
+                'ok' => false,
+                'error' => 'Invalid or expired reset link.'
+            ], 400);
+        }
+
+        if (strlen($password) < 8 || strlen($password) > 72) {
+            json_out([
+                'ok' => false,
+                'error' => 'Password must be between 8 and 72 bytes.'
+            ], 422);
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $pdo = db();
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare(
+                "SELECT prt.id, prt.user_id
+                 FROM password_reset_tokens prt
+                 INNER JOIN users u ON u.id = prt.user_id
+                 WHERE prt.token_hash = ?
+                   AND prt.used_at IS NULL
+                   AND prt.expires_at > NOW()
+                   AND u.deleted_at IS NULL
+                   AND u.account_status = 'active'
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+
+            $stmt->execute([$tokenHash]);
+            $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$reset) {
+                $pdo->rollBack();
+
+                json_out([
+                    'ok' => false,
+                    'error' => 'Invalid or expired reset link.'
+                ], 400);
+            }
+
+            $passwordHash = password_hash(
+                $password,
+                PASSWORD_BCRYPT,
+                ['cost' => 12]
+            );
+
+            if ($passwordHash === false) {
+                throw new RuntimeException('Password hashing failed.');
+            }
+
+            $stmt = $pdo->prepare(
+                'UPDATE users
+                 SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?'
+            );
+
+            $stmt->execute([
+                $passwordHash,
+                (int) $reset['user_id']
+            ]);
+
+            // Mark this token and all other outstanding tokens as used.
+            $stmt = $pdo->prepare(
+                'UPDATE password_reset_tokens
+                 SET used_at = NOW()
+                 WHERE user_id = ? AND used_at IS NULL'
+            );
+
+            $stmt->execute([(int) $reset['user_id']]);
+
+            $pdo->commit();
+
+            json_out([
+                'ok' => true,
+                'message' => 'Your password has been reset successfully.'
+            ]);
+
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            error_log('Password reset failed: ' . $e->getMessage());
+
+            json_out([
+                'ok' => false,
+                'error' => 'Unable to reset your password. Please try again.'
+            ], 500);
+        }
+    }
 
     public static function me(): void
     {
