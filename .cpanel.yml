@@ -1,10 +1,8 @@
 ---
 deployment:
   tasks:
-    # Deploy the React frontend (dist folder) to public_html
     - export DEPLOYPATH=/home8/tekvitoc/public_html/
-    - /bin/cp -R frontend/dist/* $DEPLOYPATH
+    - /bin/cp -R /home8/tekvitoc/tekvito/frontend/dist/. $DEPLOYPATH
 
-    # Deploy the PHP backend to the backend folder
     - export BACKENDPATH=/home8/tekvitoc/backend/
-    - /bin/cp -R backend/* $BACKENDPATH
+    - /bin/cp -R /home8/tekvitoc/tekvito/backend/. $BACKENDPATH
