@@ -22,7 +22,8 @@ import Login from '../pages/Login.jsx'
 import Register from '../pages/Register.jsx'
 import Dashboard from '../pages/Dashboard.jsx'
 import ProtectedRoute from '../components/ProtectedRoute.jsx'
-
+import ForgotPassword from '../pages/ForgotPassword.jsx'
+import ResetPassword from '../pages/ResetPassword.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -36,7 +37,7 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute roles={['candidate']}><Profile /></ProtectedRoute>} />
-<Route path="/applications" element={<ProtectedRoute roles={['candidate']}><Applications /></ProtectedRoute>} />
+      <Route path="/applications" element={<ProtectedRoute roles={['candidate']}><Applications /></ProtectedRoute>} />
       <Route path="/applications/:id" element={<ProtectedRoute roles={['candidate']}><ApplicationDetail /></ProtectedRoute>} />
       <Route path="/saved-jobs" element={<ProtectedRoute roles={['candidate']}><SavedJobs /></ProtectedRoute>} />
       <Route path="/my-jobs" element={<ProtectedRoute roles={['employer','recruiter','admin']}><MyJobs /></ProtectedRoute>} />
@@ -48,6 +49,8 @@ export default function AppRoutes() {
       <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
       <Route path="/admin/talent-requests" element={<ProtectedRoute roles={['admin']}><AdminTalentRequests /></ProtectedRoute>} />
       <Route path="/admin/talent-requests/:id" element={<ProtectedRoute roles={['admin']}><AdminTalentRequestDetail /></ProtectedRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
     </Routes>
   )
 }

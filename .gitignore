@@ -7,3 +7,5 @@ backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
 backend/storage/logs/*
 !backend/storage/logs/.gitkeep
+backend/config/database.php
+*.zip
