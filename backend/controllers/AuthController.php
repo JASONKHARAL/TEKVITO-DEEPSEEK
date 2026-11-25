@@ -57,6 +57,53 @@ final class AuthController
         if (strlen($password) < 8) {
             json_out(['ok' => false, 'error' => 'Password must be at least 8 characters'], 422);
         }
+        // Verify Cloudflare Turnstile before creating an account.
+$turnstileToken = trim((string) ($data['turnstile_token'] ?? ''));
+$turnstileSecret = env('TURNSTILE_SECRET_KEY');
+
+if ($turnstileToken === '' || !$turnstileSecret) {
+    json_out([
+        'ok' => false,
+        'error' => 'Please complete the security verification.'
+    ], 422);
+}
+
+$ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => http_build_query([
+        'secret' => $turnstileSecret,
+        'response' => $turnstileToken,
+    ]),
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_TIMEOUT => 10,
+]);
+
+$verificationResponse = curl_exec($ch);
+$httpStatus = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
+
+curl_close($ch);
+
+if ($verificationResponse === false || $httpStatus !== 200) {
+    error_log('Turnstile verification request failed: ' . $curlError);
+
+    json_out([
+        'ok' => false,
+        'error' => 'Security verification is temporarily unavailable. Please try again.'
+    ], 503);
+}
+
+$verification = json_decode($verificationResponse, true);
+
+if (!is_array($verification) || ($verification['success'] ?? false) !== true) {
+    json_out([
+        'ok' => false,
+        'error' => 'Security verification failed. Please try again.'
+    ], 422);
+}
         if (User::findByEmail($email)) {
             json_out(['ok' => false, 'error' => 'Email already registered'], 409);
         }
