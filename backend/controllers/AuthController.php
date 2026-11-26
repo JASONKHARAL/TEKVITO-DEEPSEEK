@@ -20,6 +20,15 @@ final class AuthController
             json_out(['ok' => false, 'error' => 'Invalid credentials'], 401);
         }
 
+        if (empty($user['email_verified_at'])) {
+            json_out([
+                'ok'    => false,
+                'error' => 'Please verify your email before logging in',
+                'code'  => 'EMAIL_NOT_VERIFIED',
+                'email' => $email,
+            ], 403);
+        }
+
         $roles = User::getRoles((int) $user['id']);
         $token = JwtService::sign([
             'sub'   => $user['id'],
@@ -109,6 +118,9 @@ if (!is_array($verification) || ($verification['success'] ?? false) !== true) {
         }
 
         $userId = User::create($email, $password, $firstName, $lastName);
+
+        $rawToken = EmailVerification::issue($userId);
+        EmailService::sendVerification($userId, $email, $firstName, $rawToken);
         $roles = User::getRoles($userId);
         $token = JwtService::sign([
             'sub'   => $userId,
@@ -117,15 +129,10 @@ if (!is_array($verification) || ($verification['success'] ?? false) !== true) {
         ]);
 
         json_out([
-            'ok'    => true,
-            'token' => $token,
-            'user'  => [
-                'id'         => $userId,
-                'email'      => $email,
-                'first_name' => $firstName,
-                'last_name'  => $lastName,
-                'roles'      => $roles,
-            ],
+            'ok' => true,
+            'requires_verification' => true,
+            'email' => $email,
+            'message' => 'Check your email to verify your account before logging in.',
         ], 201);
     }
     

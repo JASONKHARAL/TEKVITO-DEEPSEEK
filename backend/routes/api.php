@@ -100,4 +100,8 @@ return [
     ['PATCH','/admin/talent-requests/{id}/status', fn($id) => TalentRequestController::updateStatus((int) $id)],
     ['POST', '/admin/talent-requests/{id}/link-job', fn($id) => TalentRequestController::linkJob((int) $id)],
     ['DELETE', '/jobs/{id}',      fn($id) => JobController::destroy((int) $id)],
+
+    // ---- Email verification ----
+    ['GET',  '/auth/verify-email',        fn() => EmailVerificationController::verify()],
+    ['POST', '/auth/resend-verification', fn() => EmailVerificationController::resend()],
 ];

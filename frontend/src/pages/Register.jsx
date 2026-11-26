@@ -1,6 +1,5 @@
-
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -8,7 +7,6 @@ const SITE_KEY = '0x4AAAAAAGS1av2O0W5KzD8q'
 
 export default function Register() {
   const { register } = useAuth()
-  const navigate = useNavigate()
 
   const [form, setForm] = useState({
     email: '',
@@ -21,6 +19,7 @@ export default function Register() {
   const [captchaKey, setCaptchaKey] = useState(0)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -42,8 +41,7 @@ export default function Register() {
         ...form,
         turnstile_token: captchaToken
       })
-
-      navigate('/dashboard')
+      setSuccess(true)
     } catch (err) {
       const msg =
         err?.response?.data?.error ||
@@ -56,6 +54,27 @@ export default function Register() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="page">
+        <div className="card auth-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>📬</div>
+          <h2>Check your email</h2>
+          <p>
+            We've sent a verification link to <strong>{form.email}</strong>.
+          </p>
+          <p className="muted" style={{ marginTop: 12 }}>
+            Click the link in the email to verify your account. Then you can log in.
+          </p>
+          <p className="muted" style={{ fontSize: 13, marginTop: 20 }}>
+            Didn't receive it? Check your spam folder, or{' '}
+            <Link to="/login">go to login</Link> to request a new one.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
