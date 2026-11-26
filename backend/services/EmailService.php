@@ -7,7 +7,7 @@ final class EmailService
 {
     public static function sendVerification(int $userId, string $email, string $firstName, string $token): bool
     {
-        $baseUrl = rtrim(env('APP_URL', 'http://localhost:5173'), '/');
+        $baseUrl = rtrim(env('FRONTEND_URL', 'http://localhost:5173'), '/');
         $link = $baseUrl . '/verify-email?token=' . $token;
 
         $subject = 'Verify your TEKVITO email';
